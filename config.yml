@@ -1,0 +1,34 @@
+---
+baseURL: https://localhost/
+title: DSP Cookbook
+theme: hugo-geekdoc
+pygmentsUseClasses: true
+pygmentsCodeFences: true
+timeout: 180000
+pluralizeListTitles: false
+
+# Geekdoc configuration
+disablePathToLower: true
+enableGitInfo: true
+
+# Needed for mermaid shortcodes
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  tableOfContents:
+    startLevel: 1
+    endLevel: 9
+
+params:
+  # geekdocMenuBundle: true
+  geekdocToC: 3
+
+  geekdocRepo: https://github.com/tobanteAudio/dsp-cookbook
+  geekdocEditPath: edit/main/content
+
+  geekdocSearch: true
+  geekdocSearchShowParent: true
+
+  geekdocImageLazyLoading: true
+  geekdocDarkModeDim: true
