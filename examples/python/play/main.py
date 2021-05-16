@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
 import wavio
+import scipy
+from scipy import signal
+import numba
 
 
 def pcm_to_float(sig, dtype='float32'):
@@ -96,7 +99,7 @@ class Processor:
     def process(self, buffer):
         raise NotImplementedError()
 
-    def release(self):
+    def reset(self):
         raise NotImplementedError()
 
 
@@ -110,7 +113,7 @@ class Gain(Processor):
     def process(self, buffer):
         return buffer * self.gain
 
-    def release(self):
+    def reset(self):
         pass
 
 
@@ -129,7 +132,7 @@ class Plot(Processor):
         self.plot_buffer = np.append(self.plot_buffer, buffer)
         return buffer
 
-    def release(self):
+    def reset(self):
         end_time = len(self.plot_buffer) / self.sample_rate
         time_axis = np.linspace(0, end_time, num=len(self.plot_buffer))
 
@@ -137,6 +140,108 @@ class Plot(Processor):
         plt.title(self.filename)
         plt.plot(time_axis, self.plot_buffer)
         plt.savefig(self.filename)
+
+
+class CombFilter:
+    def set_size(self, size):
+        self.buffer_index = 0
+        self.buffer_size = size
+        self.clear()
+
+    def clear(self):
+        self.last = 0.0
+        self.buffer = np.zeros(self.buffer_size, dtype='float32')
+
+    def process_sample(self, input, damp, feedback):
+        output = self.buffer[self.buffer_index]
+        self.last = (output * (1.0 - damp)) + (self.last * damp)
+
+        temp = input + (self.last * feedback)
+        self.buffer[self.buffer_index] = temp
+        self.buffer_index = (self.buffer_index + 1) % self.buffer_size
+        return output
+
+
+class AllPassFilter:
+    def set_size(self, size):
+        self.buffer_index = 0
+        self.buffer_size = size
+        self.clear()
+
+    def clear(self):
+        self.buffer = np.zeros(self.buffer_size, dtype='float32')
+
+    def process_sample(self, input):
+        bufferedValue = self.buffer[self.buffer_index]
+        temp = input + (bufferedValue * 0.5)
+        self.buffer[self.buffer_index] = temp
+        self.buffer_index = (self.buffer_index + 1) % self.buffer_size
+        return bufferedValue - input
+
+
+class FreeVerb(Processor):
+    def __init__(self):
+        self.room_size = 0.5     # Room size, where 1 is big, 0 is small.
+        self.damp = 0.5     # Damp, where 0 is no damped, 1 is full damped.
+        self.wet_level = 0.33    # Wet level, 0 to 1
+        self.dry_level = 0.4     # Dry level, 0 to 1
+        self.width = 1.0     # Reverb width, where 1 is very wide.
+        self.freeze_mode = 0.0     # Freeze mode - values < 0.5 are "normal" mode, values > 0.5
+
+    def prepare(self, sample_rate, block_size, num_channels):
+        pass
+
+    def process(self, buffer):
+        return buffer * self.gain
+
+    def reset(self):
+        pass
+
+
+@numba.njit()
+def first_order_tpt_filter_process(input, G, s, type):
+    v = G * (input - s)
+    y = v + s
+    s = y + v
+
+    out = y
+    if type == 1:  # low pass
+        out = y
+    if type == 2:  # high pass
+        out = input - y
+    if type == 3:  # all pass
+        out = 2 * y - input
+    return (out, s)
+
+
+class FirstOrderTPTFilter(Processor):
+    def __init__(self, freq, type):
+        self.frequency = freq
+        self.type = type
+
+    def prepare(self, sample_rate, block_size, num_channels):
+        self.sample_rate = sample_rate
+        self.reset()
+        self.update()
+
+    def process(self, buffer):
+        G = self.G
+        type = self.type
+        for i in range(buffer.shape[0]):
+            s = self.s1[0]
+            out, s = first_order_tpt_filter_process(buffer[i], G, s, type)
+            buffer[i] = out
+            self.s1[0] = s
+        return buffer
+
+    def reset(self):
+        self.s1 = np.zeros(1, dtype='float32')
+
+    def update(self):
+        freq = self.frequency
+        sample_rate = self.sample_rate
+        g = np.tan(np.pi * freq / sample_rate)
+        self.G = g / (1 + g)
 
 
 class AudioApplication(Processor):
@@ -160,7 +265,7 @@ class AudioApplication(Processor):
 
     def release_file(self):
         self.wav.close()
-        self.release()
+        self.reset()
 
     def play_file(self, file):
         self.prepare_file(file)
@@ -204,21 +309,21 @@ class AudioApplication(Processor):
 class ExampleApp(AudioApplication):
     def __init__(self):
         super().__init__()
-        self.gain = Gain(0.025)
-        self.plot = Plot("test.jpg")
+        self.filter = FirstOrderTPTFilter(220.0, 1)
+        self.gain = Gain(0.95)
 
     def prepare(self, sample_rate, block_size, num_channels):
+        self.filter.prepare(sample_rate, block_size, num_channels)
         self.gain.prepare(sample_rate, block_size, num_channels)
-        self.plot.prepare(sample_rate, block_size, num_channels)
 
     def process(self, buffer):
+        buffer = self.filter.process(buffer)
         buffer = self.gain.process(buffer)
-        buffer = self.plot.process(buffer)
         return buffer
 
-    def release(self):
-        self.gain.release()
-        self.plot.release()
+    def reset(self):
+        self.filter.reset()
+        self.gain.reset()
 
 
 def main():

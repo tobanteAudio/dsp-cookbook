@@ -2,3 +2,5 @@ numpy
 pyaudio
 wavio
 matplotlib
+scipy
+numba
