@@ -5,3 +5,9 @@
 
 /public
 /resources/_gen/
+venv
+.venv
+
+*.wav
+*.aiff
+*.aif
