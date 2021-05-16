@@ -2,7 +2,7 @@
 
 Collection of tutorials & resources for digital signal processing.
 
-[Read Online](https://tobanteaudio.gitbook.io/dsp-cookbook/)
+[Read Online](https://tobanteAudio.github.io/dsp-cookbook/)
 
 [GitHub Repository](https://github.com/tobanteAudio/dsp-cookbook)
 
