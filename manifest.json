@@ -1,14 +1,14 @@
 {
   "name": "DSP Cookbook",
   "short_name": "DSP Cookbook",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/dsp-cookbook/",
+  "scope": "/dsp-cookbook/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/dsp-cookbook/favicon.svg",
       "sizes": "512x512"
     }
   ]

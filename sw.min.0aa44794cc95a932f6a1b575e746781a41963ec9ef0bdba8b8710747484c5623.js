@@ -1,0 +1,1 @@
+navigator.serviceWorker&&navigator.serviceWorker.register("/dsp-cookbook/sw.js",{scope:"/dsp-cookbook/"})
