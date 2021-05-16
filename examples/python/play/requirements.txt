@@ -4,3 +4,4 @@ wavio
 matplotlib
 scipy
 numba
+soundfile

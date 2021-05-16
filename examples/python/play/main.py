@@ -11,6 +11,7 @@ import wavio
 import scipy
 from scipy import signal
 import numba
+import soundfile as sf
 
 
 def pcm_to_float(sig, dtype='float32'):
@@ -199,7 +200,7 @@ class FreeVerb(Processor):
 
 
 @numba.njit()
-def first_order_tpt_filter_process(input, G, s, type):
+def firstorder_tpt_process_sample(input, G, s, type):
     v = G * (input - s)
     y = v + s
     s = y + v
@@ -212,6 +213,15 @@ def first_order_tpt_filter_process(input, G, s, type):
     if type == 3:  # all pass
         out = 2 * y - input
     return (out, s)
+
+
+@numba.njit()
+def firstorder_tpt_process(buffer, G, s, type):
+    for i in range(buffer.shape[0]):
+        out, new_s = firstorder_tpt_process_sample(buffer[i], G, s, type)
+        buffer[i] = out
+        s = new_s
+    return (buffer, s)
 
 
 class FirstOrderTPTFilter(Processor):
@@ -227,11 +237,9 @@ class FirstOrderTPTFilter(Processor):
     def process(self, buffer):
         G = self.G
         type = self.type
-        for i in range(buffer.shape[0]):
-            s = self.s1[0]
-            out, s = first_order_tpt_filter_process(buffer[i], G, s, type)
-            buffer[i] = out
-            self.s1[0] = s
+        s = self.s1[0]
+        buffer, s = firstorder_tpt_process(buffer, G, s, type)
+        self.s1[0] = s
         return buffer
 
     def reset(self):
@@ -292,18 +300,21 @@ class AudioApplication(Processor):
         self.release_file()
 
     def render_file(self, in_file, out_file):
-        self.prepare_file(in_file)
+        info = sf.info(in_file)
 
-        pcm_buffer = np.zeros(0, dtype='int16')
-        data = self.wav.readframes(self.block_size)
+        self.format = info.format
+        self.subtype = info.subtype
+        self.sample_rate = info.samplerate
+        self.block_size = 1024
+        self.num_channels = info.channels
+        self.prepare(self.sample_rate, self.block_size, self.num_channels)
 
-        while len(data) > 0:
-            data = self.wav.readframes(self.block_size)
-            buffer = self.process(byte_to_float(data))
-            pcm_buffer = np.append(pcm_buffer, float_to_pcm(buffer))
+        render_buffer = np.zeros(0, dtype='float32')
+        for block in sf.blocks(in_file, blocksize=self.block_size, dtype='float32'):
+            render_buffer = np.append(render_buffer, self.process(block))
 
-        wavio.write(out_file, pcm_buffer, self.sample_rate, scale='none')
-        self.release_file()
+        self.reset()
+        sf.write(out_file, render_buffer, self.sample_rate, self.subtype)
 
 
 class ExampleApp(AudioApplication):
@@ -332,6 +343,7 @@ def main():
         sys.exit(1)
 
     app = ExampleApp()
+    # app.play_file(sys.argv[1])
     app.render_file(sys.argv[1], "myfile.wav")
 
 
