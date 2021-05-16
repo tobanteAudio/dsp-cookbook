@@ -1,5 +1,5 @@
 ---
-baseURL: https://localhost/
+baseURL: https://tobanteaudio.github.io/dsp-cookbook/
 title: DSP Cookbook
 theme: book
 pygmentsUseClasses: true
