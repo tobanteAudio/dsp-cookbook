@@ -7,6 +7,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
+import wavio
 
 
 def pcm_to_float(sig, dtype='float32'):
@@ -107,8 +108,7 @@ class Gain(Processor):
         pass
 
     def process(self, buffer):
-        buffer = buffer * self.gain
-        return buffer
+        return buffer * self.gain
 
     def release(self):
         pass
@@ -136,7 +136,7 @@ class Plot(Processor):
         plt.figure(1)
         plt.title(self.filename)
         plt.plot(time_axis, self.plot_buffer)
-        plt.show()
+        plt.savefig(self.filename)
 
 
 class AudioApplication(Processor):
@@ -189,21 +189,22 @@ class AudioApplication(Processor):
     def render_file(self, in_file, out_file):
         self.prepare_file(in_file)
 
+        pcm_buffer = np.zeros(0, dtype='int16')
         data = self.wav.readframes(self.block_size)
 
-        while data != '':
+        while len(data) > 0:
             data = self.wav.readframes(self.block_size)
-            buffer = byte_to_float(data)
-            buffer = self.process(buffer)
-            return (float_to_byte(buffer), pyaudio.paContinue)
+            buffer = self.process(byte_to_float(data))
+            pcm_buffer = np.append(pcm_buffer, float_to_pcm(buffer))
 
+        wavio.write(out_file, pcm_buffer, self.sample_rate, scale='none')
         self.release_file()
 
 
 class ExampleApp(AudioApplication):
     def __init__(self):
         super().__init__()
-        self.gain = Gain(0.5)
+        self.gain = Gain(0.025)
         self.plot = Plot("test.jpg")
 
     def prepare(self, sample_rate, block_size, num_channels):
@@ -226,7 +227,7 @@ def main():
         sys.exit(1)
 
     app = ExampleApp()
-    app.play_file(sys.argv[1])
+    app.render_file(sys.argv[1], "myfile.wav")
 
 
 if __name__ == "__main__":
