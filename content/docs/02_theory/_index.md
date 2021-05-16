@@ -6,4 +6,14 @@ bookFlatSection: true
 
 # Theory
 
-Some text
+## ToDo
+
+- Signals
+  - Frequency
+  - Amplitude/Decibels
+- Notes
+  - Octaves
+  - Root frequency
+- Analog vs. digital signals
+  - Sampling rate
+  - Nyquist theorem

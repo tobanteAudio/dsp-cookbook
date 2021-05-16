@@ -6,4 +6,11 @@ bookFlatSection: true
 
 # C++
 
-Some text
+## ToDo
+
+- Primary applications
+  - Realtime desktop/embedded
+- Libraries
+  - JUCE
+  - rtAudio
+  - Native
