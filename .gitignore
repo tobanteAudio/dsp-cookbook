@@ -3,5 +3,5 @@
 .vs
 .vscode
 
-public
-themes
+/public
+/resources/_gen/

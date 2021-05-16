@@ -1,6 +1,11 @@
 ---
-title: "DSP Cookbook"
-weight: 0
+title: Introduction
+type: docs
 ---
 
-> **_WARNING:_** Work in progress. Some sections might not have any content or only a list of todos.
+# DSP Cookbook
+
+{{< hint danger >}}
+**WIP**
+Some sections might not have any content or only a list of todos.
+{{< /hint >}}
