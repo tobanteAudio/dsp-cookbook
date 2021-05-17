@@ -6,7 +6,7 @@ import numpy.linalg as la
 
 
 def square_mat2():
-    # x + 2y = 5
+    #  x + 2y = 5
     # 3x + 4y = 6
     A = np.array([[1, 2], [3, 4]])
     b = np.array([[5], [6]])
@@ -20,7 +20,7 @@ def square_mat2():
 
 
 def non_square_mat23():
-    # x + 2y = 5
+    #  x + 2y = 5
     # 3x + 4y = 6
     # 7x + 8y = 9
     A = np.array([[1, 2], [3, 4], [7, 8]])
