@@ -6,3 +6,4 @@ scipy
 numba
 soundfile
 PySpice
+PySide2

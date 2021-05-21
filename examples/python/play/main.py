@@ -2,16 +2,16 @@
 
 import wave
 import time
+import random
 import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
-import wavio
-import scipy
-from scipy import signal
 import numba
 import soundfile as sf
+
+from PySide2 import QtCore, QtGui, QtWidgets
 
 
 def pcm_to_float(sig, dtype='float32'):
@@ -199,7 +199,7 @@ class FreeVerb(Processor):
         pass
 
 
-@numba.njit()
+@numba.njit(cache=True)
 def firstorder_tpt_process_sample(input, G, s, type):
     v = G * (input - s)
     y = v + s
@@ -215,7 +215,7 @@ def firstorder_tpt_process_sample(input, G, s, type):
     return (out, s)
 
 
-@numba.njit()
+@numba.njit(cache=True)
 def firstorder_tpt_process(buffer, G, s, type):
     for i in range(buffer.shape[0]):
         out, new_s = firstorder_tpt_process_sample(buffer[i], G, s, type)
@@ -258,6 +258,7 @@ class AudioApplication(Processor):
         self.wav = None
 
     def __del__(self):
+        self.stop_playback()
         self.pa.terminate()
 
     def prepare_file(self, file):
@@ -283,20 +284,18 @@ class AudioApplication(Processor):
             buffer = self.process(buffer)
             return (float_to_byte(buffer), pyaudio.paContinue)
 
-        stream = self.pa.open(format=self.format,
-                              channels=self.num_channels,
-                              rate=self.sample_rate,
-                              output=True,
-                              stream_callback=callback,
-                              frames_per_buffer=self.block_size)
+        self.stream = self.pa.open(format=self.format,
+                                   channels=self.num_channels,
+                                   rate=self.sample_rate,
+                                   output=True,
+                                   stream_callback=callback,
+                                   frames_per_buffer=self.block_size)
 
-        stream.start_stream()
+        self.stream.start_stream()
 
-        while stream.is_active():
-            time.sleep(0.1)
-
-        stream.stop_stream()
-        stream.close()
+    def stop_playback(self):
+        self.stream.stop_stream()
+        self.stream.close()
         self.release_file()
 
     def render_file(self, in_file, out_file):
@@ -337,15 +336,64 @@ class ExampleApp(AudioApplication):
         self.gain.reset()
 
 
-def main():
-    if len(sys.argv) < 2:
-        print(f'Plays a wave file.\n\nUsage: {sys.argv[0]} filename.wav')
-        sys.exit(1)
+class MainWindow(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
 
-    app = ExampleApp()
-    # app.play_file(sys.argv[1])
-    app.render_file(sys.argv[1], "myfile.wav")
+        if len(sys.argv) < 2:
+            print(f'Plays a wave file.\n\nUsage: {sys.argv[0]} filename.wav')
+            sys.exit(1)
+
+        self.audio = ExampleApp()
+
+        self.setWindowTitle("AudioPlayer")
+        self.createSlider()
+
+        self.show()
+
+    def createSlider(self):
+        hbox = QtWidgets.QHBoxLayout()
+
+        self.slider = QtWidgets.QSlider()
+        self.slider.setOrientation(QtCore.Qt.Horizontal)
+        self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.slider.setTickInterval(1)
+        self.slider.setMinimum(1)
+        self.slider.setMaximum(20000)
+
+        self.slider.valueChanged.connect(self.changedValue)
+
+        self.label = QtWidgets.QLabel("0")
+        self.label.setFont(QtGui.QFont("Sanserif", 15))
+
+        self.button = QtWidgets.QPushButton("Play")
+        self.button.clicked.connect(self.startPlayback)
+
+        hbox.addWidget(self.button)
+        hbox.addWidget(self.slider)
+        hbox.addWidget(self.label)
+
+        self.setLayout(hbox)
+
+    def changedValue(self):
+        size = self.slider.value()
+        self.audio.filter.frequency = size
+        self.audio.filter.update()
+        self.label.setText(str(size))
+
+    @QtCore.Slot()
+    def startPlayback(self):
+        self.audio.play_file(sys.argv[1])
+        # app.render_file(sys.argv[1], "myfile.wav")
+
+# def main():
 
 
 if __name__ == "__main__":
-    main()
+    app = QtWidgets.QApplication([])
+
+    window = MainWindow()
+    window.resize(800, 600)
+    window.show()
+
+    sys.exit(app.exec_())

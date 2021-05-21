@@ -11,3 +11,5 @@ venv
 *.wav
 *.aiff
 *.aif
+
+__pycache__
