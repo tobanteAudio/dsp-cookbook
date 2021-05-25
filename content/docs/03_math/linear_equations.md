@@ -23,7 +23,7 @@ x = A^{-1} \cdot b
 \tag{a.3} A =
 \begin{pmatrix}
 1 & 2 \\
-4 & 3
+3 & 4
 \end{pmatrix}
 
 \quad
@@ -39,7 +39,7 @@ b =
 \tag{a.4} x =
 \begin{pmatrix}
 1 & 2 \\
-4 & 3
+3 & 4
 \end{pmatrix}^{-1}
 
 \cdot

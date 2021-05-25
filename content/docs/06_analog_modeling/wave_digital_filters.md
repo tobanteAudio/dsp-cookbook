@@ -1,5 +1,5 @@
 ---
-weight: 6
+weight: 630
 title: "Wave Digital Filters"
 ---
 
