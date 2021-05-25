@@ -28,3 +28,4 @@ title: "Basic Electronics"
 
 - [electronics-notes.com: What is Resistance? Electrical Resistance](https://www.electronics-notes.com/articles/basic_concepts/resistance/what-is-resistance.php)
 - [electronics-notes.com: What is Capacitance: basic concepts](https://www.electronics-notes.com/articles/basic_concepts/capacitance/capacitance.php)
+- [sound-au.com: Audio circuit examples](https://sound-au.com/p-list.htm)
