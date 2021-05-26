@@ -1,4 +1,6 @@
 ---
+googleAnalytics: G-MTFSLG76TK
+
 baseURL: https://tobanteaudio.github.io/dsp-cookbook/
 title: DSP Cookbook
 theme: book
@@ -7,7 +9,6 @@ pygmentsCodeFences: true
 timeout: 180000
 pluralizeListTitles: false
 
-googleAnalytics: G-MTFSLG76TK
 
 # Geekdoc configuration
 disablePathToLower: true
